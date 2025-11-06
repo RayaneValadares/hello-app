@@ -4,5 +4,5 @@ app = FastAPI()
 
 @app.get("/") 
 async def root(): 
-    return {"message": "Action figure"}
+    return {"message": "Olá, esse é o resultado do meu projeto de CI/CD com o Github Actions"}
     

@@ -2,10 +2,10 @@ name: CI/CD - Build, Push e Atualiza Manifests
 
 on:
   push:
-    branches: [ "main" ]  # roda sempre que algo é enviado pra main
+    branches: [ "main" ]
 
 env:
-  IMAGE_NAME: rayvaladares/hello-app  
+  IMAGE_NAME: rayvaladares/hello-app
 
 jobs:
   build-and-push:
@@ -15,7 +15,7 @@ jobs:
     - name: Checkout do código
       uses: actions/checkout@v4
 
-    - name: Configurar Buildx (para build multi-plataforma)
+    - name: Configurar Buildx
       uses: docker/setup-buildx-action@v2
 
     - name: Login no Docker Hub
@@ -24,7 +24,7 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build e Push da imagem para o Docker Hub
+    - name: Build e Push da imagem
       id: build
       uses: docker/build-push-action@v4
       with:
@@ -38,27 +38,19 @@ jobs:
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-    - name: Clonar o repositório de manifests
+    - name: Clonar repositório de manifests
       run: |
-        git clone ${{ secrets.MANIFESTS_REPO }} manifests
+        git clone git@github.com:RayaneValadares/hello-manifests.git manifests
 
-    - name: Atualizar o deployment.yaml com a nova tag da imagem
+    - name: Atualizar deployment.yaml com nova tag
       run: |
         cd manifests
         NEW_IMAGE="${{ env.IMAGE_NAME }}:${{ github.sha }}"
+        echo "Atualizando imagem para: ${NEW_IMAGE}"
         sed -i "s|image: .*|image: ${NEW_IMAGE}|g" deployment.yaml
         git config user.email "actions@github.com"
         git config user.name "github-actions"
-        git checkout -b ci/update-image-${{ github.run_id }}
         git add deployment.yaml
-        git commit -m "ci: atualiza imagem para ${NEW_IMAGE}"
-        git push origin HEAD
-
-    - name: Criar Pull Request para o repositório de manifests
-      run: |
-        BRANCH="ci/update-image-${{ github.run_id }}"
-        PR_TITLE="ci: update image ${{ github.sha }}"
-        PR_BODY="Atualização automática da imagem para ${{ env.IMAGE_NAME }}:${{ github.sha }}"
-        curl -s -X POST -H "Authorization: token ${{ secrets.MANIFESTS_REPO_API_TOKEN }}" \
-          -d "{\"title\":\"${PR_TITLE}\",\"head\":\"${BRANCH}\",\"base\":\"main\",\"body\":\"${PR_BODY}\"}" \
-          https://api.github.com/repos/RayaneValadares/hello-manifests/pulls
+        git commit -m "ci: atualiza imagem para ${NEW_IMAGE}" || echo "Não se encontra nenhuma mudança para commitar"
+        git pull --rebase origin main || true
+        git push origin main
