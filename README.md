@@ -296,10 +296,37 @@ kubectl port-forward svc/hello-app 8080:80
 <br>
 
 Acesse no navegador:
-http://localhost:8080
+http://localhost:8081
 
 <img width="739" height="277" alt="Captura de tela 2025-11-06 161742" src="https://github.com/user-attachments/assets/c60ae1d8-064a-4a68-8382-7a0e08d57779" />
 
+<br>
+<br>
+<br>
+<br>
+
+**Exemplo de Atualização Automática**
+
+Edite o arquivo main.py:
+
+```bash
+return {"message": "Olá Mundo, essa é outra mensagem para o meu projeto CI/CD com o Github Actions e ArgoCD"}
+```
+
+Faça o push:
+
+```bash
+git add .
+git commit -m "feat: Nova mensagem"
+git push
+```
+
+Com isso, o GitHub Actions:
+
+- Builda e publica nova imagem;
+- Atualiza hello-manifests com a nova tag;
+- O ArgoCD aplica o novo deploy automaticamente.
+  
 <br>
 <br>
 <br>
